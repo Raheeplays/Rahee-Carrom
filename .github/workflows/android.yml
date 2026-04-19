@@ -1,0 +1,54 @@
+name: Build and Silent Update
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web Project
+        run: npm run build
+
+      - name: Create Update Zip
+        run: cd dist && zip -r ../dist.zip .
+
+      - name: Release Live Update
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist.zip
+          tag_name: latest
+          name: "Latest Web Update"
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Android APK
+        run: |
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
