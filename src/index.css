@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Ensure the board scales correctly on all screens */
+.board-container {
+  width: 100%;
+  max-width: min(95vw, 85vh, 800px);
+  margin: 0 auto;
+}
+
+@layer base {
+  input[type="range"].custom-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--striker-size, 44px);
+    height: var(--striker-size, 44px);
+    background: #2196f3;
+    border: 3px solid #0d47a1;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    background-image: radial-gradient(circle at center, white 2px, transparent 3px);
+    margin-top: 0;
+  }
+
+  input[type="range"].custom-range-slider::-moz-range-thumb {
+    width: var(--striker-size, 44px);
+    height: var(--striker-size, 44px);
+    background: #2196f3;
+    border: 3px solid #0d47a1;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    background-image: radial-gradient(circle at center, white 2px, transparent 3px);
+  }
+}

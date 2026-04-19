@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && 
+        (request.auth.uid == userId || 
+         (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.name == userId));
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "raheeplays5@gmail.com" && request.auth.token.email_verified == true ||
+         (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.isAdmin == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasOnly(['name', 'key', 'isApproved', 'isAdmin', 'createdAt', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 50 &&
+             data.key is string && data.key.size() > 0 && data.key.size() < 50 &&
+             data.isApproved is bool &&
+             data.isAdmin is bool;
+    }
+
+    function isValidLobby(data) {
+      return data.keys().hasAll(['playerIds', 'playerNames', 'status', 'maxPlayers', 'createdAt']) &&
+             data.playerIds is list && data.playerIds.size() <= data.maxPlayers &&
+             data.playerNames is list && data.playerNames.size() == data.playerIds.size() &&
+             data.status in ['waiting', 'playing', 'finished'] &&
+             data.maxPlayers is int && data.maxPlayers >= 2 && data.maxPlayers <= 4;
+    }
+
+    function isValidGame(data) {
+      return data.keys().hasAll(['pieces', 'currentPlayerIndex', 'scores', 'isMoving', 'playerIds', 'playerNames', 'gameId']) &&
+             data.pieces is list &&
+             data.currentPlayerIndex is int &&
+             data.scores is list &&
+             data.isMoving is bool &&
+             data.playerIds is list &&
+             data.playerNames is list;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated(); // Allow list for login query
+      allow create: if isAuthenticated() && 
+                      request.resource.data.uid == request.auth.uid &&
+                      isValidUser(request.resource.data) &&
+                      (request.resource.data.isAdmin == false || 
+                       (request.resource.data.name.lower() == 'rahee' && request.resource.data.key == '786'));
+      allow update: if isAdmin() || isOwner(userId) || 
+                      (isAuthenticated() && 
+                       request.resource.data.key == resource.data.key && 
+                       request.resource.data.name == resource.data.name);
+    }
+
+    match /profiles/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    match /lobbies/{lobbyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidLobby(request.resource.data);
+      allow update: if isAuthenticated() && isValidLobby(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /games/{gameId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidGame(request.resource.data);
+      allow update: if isAuthenticated() && 
+                      (resource.data.playerIds.hasAny([request.auth.uid]) || isAdmin()) &&
+                      isValidGame(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /config/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /friendRequests/{userId}/items/{requestId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || request.auth.uid == request.resource.data.fromId);
+    }
+
+    match /users/connection-test {
+      allow read: if isAuthenticated();
+    }
+  }
+}

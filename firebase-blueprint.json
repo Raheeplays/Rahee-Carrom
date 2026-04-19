@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A player in the game.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "key": { "type": "string" },
+        "isApproved": { "type": "boolean" },
+        "isAdmin": { "type": "boolean" },
+        "uid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "key", "isApproved", "isAdmin"]
+    },
+    "Lobby": {
+      "title": "Lobby",
+      "description": "A game lobby for matchmaking.",
+      "type": "object",
+      "properties": {
+        "playerIds": { "type": "array", "items": { "type": "string" } },
+        "playerNames": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["waiting", "playing", "finished"] },
+        "maxPlayers": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["playerIds", "status", "maxPlayers"]
+    },
+    "GameState": {
+      "title": "GameState",
+      "description": "The real-time state of a carrom game.",
+      "type": "object",
+      "properties": {
+        "pieces": { "type": "array", "items": { "type": "object" } },
+        "currentPlayerIndex": { "type": "integer" },
+        "scores": { "type": "array", "items": { "type": "integer" } },
+        "isMoving": { "type": "boolean" },
+        "lastUpdate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["pieces", "currentPlayerIndex", "scores", "isMoving"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Player profiles."
+    },
+    "/profiles/{uid}": {
+      "schema": "object",
+      "description": "Mapping from UID to username and admin status."
+    },
+    "/lobbies/{lobbyId}": {
+      "schema": "Lobby",
+      "description": "Active game lobbies."
+    },
+    "/games/{gameId}": {
+      "schema": "GameState",
+      "description": "Active game states."
+    }
+  }
+}
