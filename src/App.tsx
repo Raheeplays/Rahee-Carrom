@@ -1,3 +1,39 @@
+import React, { useEffect } from 'react';
+import { CapacitorUpdater } from 'capacitor-updater';
+
+const App: React.FC = () => {
+  useEffect(() => {
+    const handleSilentUpdate = async () => {
+      try {
+        // 1. Download naya code background mein
+        const version = await CapacitorUpdater.download({
+          url: 'https://github.com',
+        });
+
+        // 2. Agar download ho gaya, to ise install kar do
+        // Ye silent hai, naya code agli baar app khulne par dikhega
+        if (version) {
+          await CapacitorUpdater.set(version);
+        }
+      } catch (error) {
+        console.error("Update failed", error);
+      }
+    };
+
+    handleSilentUpdate();
+  }, []);
+
+  return (
+    <div className="App">
+      <h1>My App (Version 1)</h1>
+      {/* Aapka baaki UI */}
+    </div>
+  );
+};
+
+export default App;
+
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'motion/react';
 import { LogOut, Users, Coins, ChevronLeft } from 'lucide-react';
